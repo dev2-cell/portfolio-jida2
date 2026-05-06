@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIDA | Multiverse Domain</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+        }
+
+        /* Loading Overlay */
+        #loader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: #00f2ff;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Layer */
+        .interface {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .bouncing-title {
+            font-size: clamp(2rem, 8vw, 5rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px #ff003c, 0 0 40px #00f2ff;
+            animation: ultimateBounce 1.5s infinite alternate ease-in-out;
+            margin-bottom: 20px;
+            pointer-events: auto;
+        }
+
+        @keyframes ultimateBounce {
+            from { transform: translateY(0px) rotate(-2deg); filter: hue-rotate(0deg); }
+            to { transform: translateY(-40px) rotate(2deg); filter: hue-rotate(360deg); }
+        }
+
+        /* Form "Iyandikishe" */
+        .glass-panel {
+            background: rgba(0, 242, 255, 0.05);
+            backdrop-filter: blur(25px);
+            border: 2px solid #00f2ff;
+            padding: 40px;
+            border-radius: 50px 5px 50px 5px;
+            width: 350px;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.5), inset 0 0 20px rgba(255, 0, 60, 0.3);
+            pointer-events: auto;
+            animation: vibrate 0.2s infinite alternate;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(1px, 1px); }
+            100% { transform: translate(-1px, -1px); }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #ff003c;
+            color: #00f2ff;
+            font-family: 'Orbitron';
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .btn-jida {
+            width: 100%;
+            padding: 15px;
+            background: #ff003c;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            transition: 0.3s;
+        }
+
+        .btn-jida:hover {
+            background: #00f2ff;
+            color: #000;
+            box-shadow: 0 0 30px #00f2ff;
+        }
+
+        #success-screen {
+            display: none;
+            text-align: center;
+            background: rgba(0,0,0,0.9);
+            padding: 50px;
+            border: 5px solid gold;
+            box-shadow: 0 0 100px gold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loader">INITIALIZING MULTIVERSE...</div>
+<div id="canvas-container"></div>
+
+<div class="interface">
+    <h1 class="bouncing-title">WELCOME TO JIDA</h1>
+    
+    <div class="glass-panel" id="formBox">
+        <h3 style="text-align: center; color: #ff003c;">DANGER: MEMBERS ONLY</h3>
+        <form id="jidaMainForm">
+            <div class="input-group">
+                <input type="text" placeholder="ID NAME" required>
+            </div>
+            <div class="input-group">
+                <input type="email" placeholder="NEURAL MAIL" required>
+            </div>
+            <button type="submit" class="btn-jida">ACTIVATE MEMBERSHIP</button>
+        </form>
+    </div>
+
+    <div id="success-screen">
+        <h1 style="color: gold; font-size: 3rem;">CONGRATULATIONS!</h1>
+        <p style="font-size: 1.5rem;">Ubu ubaye umunyamuryango wa JIDA mu Multiverse yose!</p>
+    </div>
+</div>
+
+<script>
+    // --- 3D ENGINE START ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // 1. Imibumbe Myinshi (Planet Generator)
+    const planets = [];
+    const createPlanet = (size, color, dist, speed) => {
+        const geo = new THREE.SphereGeometry(size, 32, 32);
+        const mat = new THREE.MeshPhongMaterial({ 
+            color: color, 
+            emissive: color, 
+            emissiveIntensity: 0.5,
+            shininess: 100 
+        });
+        const planet = new THREE.Mesh(geo, mat);
+        const orbit = new THREE.Object3D();
+        scene.add(orbit);
+        orbit.add(planet);
+        planet.position.set(dist, 0, 0);
+        return { planet, orbit, speed };
+    };
+
+    // Imibumbe 5 itandukanye
+    planets.push(createPlanet(1.5, 0x00f2ff, 5, 0.01)); // Isi
+    planets.push(createPlanet(1, 0xff003c, 8, 0.008)); // Mars style
+    planets.push(createPlanet(2.2, 0x7000ff, 12, 0.005)); // Purple Giant
+    planets.push(createPlanet(0.8, 0xffff00, 15, 0.015)); // Gold Runner
+    planets.push(createPlanet(3, 0x00ff00, 20, 0.003)); // Bio Planet
+
+    // 2. Ibisimba / Aliens (Floating Cubes & Shapes)
+    const monsters = [];
+    for(let i=0; i<50; i++) {
+        const geo = new THREE.OctahedronGeometry(Math.random() * 0.5);
+        const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+        const monster = new THREE.Mesh(geo, mat);
+        monster.position.set(
+            (Math.random()-0.5)*100,
+            (Math.random()-0.5)*100,
+            (Math.random()-0.5)*100
+        );
+        scene.add(monster);
+        monsters.push(monster);
+    }
+
+    // 3. Inyenyeri (Stars)
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 15000;
+    const posArr = new Float32Array(starCount * 3);
+    for(let i=0; i<starCount*3; i++) {
+        posArr[i] = (Math.random() - 0.5) * 1000;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    const starMat = new THREE.PointsMaterial({ size: 0.7, color: 0xffffff });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
+
+    // Amatara
+    const pointLight = new THREE.PointLight(0xffffff, 2, 100);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+    scene.add(new THREE.AmbientLight(0x333333));
+
+    camera.position.z = 30;
+
+    // Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Zunguza imibumbe
+        planets.forEach(p => {
+            p.orbit.rotation.y += p.speed;
+            p.planet.rotation.y += 0.02;
+        });
+
+        // Zunguza ibisimba
+        monsters.forEach(m => {
+            m.rotation.x += 0.01;
+            m.rotation.y += 0.01;
+            m.position.y += Math.sin(Date.now() * 0.001) * 0.02;
+        });
+
+        starField.rotation.y += 0.0005;
+        
+        // Kamera igenda yizunguza buhoro
+        camera.position.x = Math.sin(Date.now() * 0.0005) * 5;
+        camera.lookAt(0,0,0);
+
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Loader logic
+    window.onload = () => {
+        setTimeout(() => {
+            document.getElementById('loader').style.display = 'none';
+        }, 2000);
+    };
+
+    // Form Logic
+    document.getElementById('jidaMainForm').onsubmit = (e) => {
+        e.preventDefault();
+        document.getElementById('formBox').style.display = 'none';
+        document.querySelector('.bouncing-title').style.display = 'none';
+        document.getElementById('success-screen').style.display = 'block';
+        
+        // Warp Speed Effect
+        starMat.color.setHex(0xff003c);
+        planets.forEach(p => p.speed *= 10);
+    };
+
+    // Handle Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
